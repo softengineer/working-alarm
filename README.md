@@ -1,7 +1,7 @@
 # work-rest-reminder
-give tip to standup minutes in your computer while you have long seat
+Give tip to standup minutes in your computer while you have long seat
 
-support Mac / Linux / Windows platform
+Support Mac / Linux / Windows platform, qt5 is required to be installed before compile
 
 Install:
 
