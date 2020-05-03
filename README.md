@@ -6,7 +6,9 @@ Support Mac / Linux / Windows platform, qt5 is required to be installed before c
 Install:
 
 qmake -makefile
+
 make
+
 make install
 
 Enjoy!
