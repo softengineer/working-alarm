@@ -1,11 +1,11 @@
 # work-rest-reminder
-Raise work alarm for standup /seat / rest minutes in your computer while you need stand/seated style of work
+Give timeout alarm for standup / seated / rest style work (useful for long seated style of work, which has been proved not healthy)
 
 Support Mac / Linux / Windows platform, qt5 or 6 is required to be installed before compile
 
-Tested :
+Have tested platform:
 
- Linux Ubuntu
+   Linux Ubuntu
 
 Install:
 
