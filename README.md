@@ -1,7 +1,11 @@
 # work-rest-reminder
-Give tip to standup minutes in your computer while you have long seat
+Raise work alarm for standup /seat / rest minutes in your computer while you need stand/seated style of work
 
-Support Mac / Linux / Windows platform, qt5 is required to be installed before compile
+Support Mac / Linux / Windows platform, qt5 or 6 is required to be installed before compile
+
+Tested :
+
+ Linux Ubuntu
 
 Install:
 
@@ -10,5 +14,7 @@ qmake -makefile
 make
 
 make install
+
+or install qtcreator to compile 
 
 Enjoy!

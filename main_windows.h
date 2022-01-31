@@ -17,11 +17,15 @@ class QImage;
 class QTimer;
 class QComboBox;
 
-const QString WORKTIP = "Working time left : ";
+const QString WORKTIP = "Seated Working time left : ";
+const QString STANDINGTIP = "Standing Working time left : ";
 const QString RESTTIP = "Resting time left : ";
 
-const int ST_WORK = 1;
-const int ST_REST = 2;
+const int ST_SEATWORK = 1;
+const int ST_STANDING = 2;
+const int ST_REST = 3;
+
+
 
 class Main_windows : public QDialog
 {
@@ -29,18 +33,32 @@ class Main_windows : public QDialog
 public:
     Main_windows();
 
+public slots:
+
+     void reloadConfig();
+
 private slots:
+
+
     void about();
     void start();
+    void resume();
+    void stop();
     void acknowledge();
     void showSetting();
     void timeout();
 
+
 private:
+    QAtomicInt totalSeatedSecondTime = 0;
+    QAtomicInt totalStandSecondTime = 0;
+    QAtomicInt totalRestSecondTime = 0;
     void init_window();
     void createTrayIcon();
     void createActions();
+    void setAnimation();
     int  currentStauts();
+
     QString formatTime(int time);
 
     void closeEvent(QCloseEvent *closeEvent);
@@ -57,11 +75,20 @@ private:
     QPushButton * btMin;
     QPushButton * btQuit;
     QPushButton * btStop;
+    QPushButton * btPause;
     QComboBox *   qcStatus;
 
     QLabel * message;
     QLabel * status;
     QLabel * timeLabel;
+    QLabel * movieLabel;
+    QLabel * stat;
+
+    int seatedMinutes = 0;
+    int standMinutes = 0;
+    int restMinutes = 0;
+
+    QCheckBox * workMode;
 
     QAction *minimizeAction;
     QAction *maximizeAction;
@@ -71,8 +98,16 @@ private:
     QTimer * timer;
     Setting * setting;
 
+    QMovie * workGif;
+    QMovie * idleGif;
+    QMovie * readyGif;
+    QMovie * clickGif;
+    QMovie *  standWorkingGif;
+
     QSystemTrayIcon *trayIcon;
     QMenu *trayIconMenu;
+
+
 };
 
 #endif // MAIN_WINDOWS_H

@@ -65,8 +65,6 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     QStringList args =  QCoreApplication::arguments();
-    int workMinutes = 0;
-    int restMinutes = 0;
 
     if (!QSystemTrayIcon::isSystemTrayAvailable()) {
         QMessageBox::critical(nullptr, QObject::tr("Systray"),

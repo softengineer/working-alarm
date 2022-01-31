@@ -1,4 +1,5 @@
 #include "main_windows.h"
+#include "setting.h"
 #include <QApplication>
 #include <QProgressBar>
 #include <QIcon>
@@ -11,6 +12,8 @@
 #include <QComboBox>
 #include <QMenu>
 #include <QMessageBox>
+#include <QMovie>
+#include <QCheckBox>
 
 
 
@@ -27,19 +30,29 @@ void Main_windows::closeEvent(QCloseEvent *)
     QApplication::quit();
 }
 
+
 void Main_windows::init_window()
 {
     Qt::WindowFlags flags = Qt::Window | Qt::WindowSystemMenuHint
                                 | Qt::WindowMinimizeButtonHint
                                 | Qt::WindowCloseButtonHint;
 
-    setting = NULL;
-    setWindowTitle(tr("Workout Alarm"));
-    setWindowIcon(QIcon("images/trash.png"));
+    setting = new Setting();
+
+    QObject::connect(setting, SIGNAL(updateChange( )),      this,  SLOT(reloadConfig()));
+    setWindowTitle(tr("Working/Rest Alarm"));
+    setWindowIcon(QIcon(":images/alarm_app.ico"));
     setWindowFlags(flags);
 
-    //control progress bar
 
+    workGif = new QMovie(":images/working.gif");
+    idleGif = new QMovie(":images/giphy.gif");
+    readyGif = new QMovie(":images/ready.gif");
+    clickGif = new QMovie(":images/click.gif");
+    standWorkingGif =  new QMovie(":images/standing_working.gif");
+
+    stat = new QLabel( QString("Total Stat:\nSeated Minutes: %1m\nStanding Minutes: %1m\nRest Minutes: %1m").
+                       arg(formatTime(totalSeatedSecondTime)).arg(formatTime(totalStandSecondTime)).arg(formatTime(totalRestSecondTime)) );
 
     // control work sleep
     timer = new QTimer(this);
@@ -51,7 +64,7 @@ void Main_windows::init_window()
     pbar = new QProgressBar(this);
     pbar->setFixedWidth(400);
     btAbout = new QPushButton(tr("About"));
-    qiAlarm = new QImage( "images/alarm.png");
+    qiAlarm = new QImage( ":images/alarm.png");
     icon->setSizePolicy( QSizePolicy::Ignored, QSizePolicy::Ignored );
     icon->setPixmap(QPixmap::fromImage(*qiAlarm).scaled(25,25,Qt::KeepAspectRatio));
 
@@ -65,31 +78,44 @@ void Main_windows::init_window()
     pbar->setValue(0);
 
     btStart = new QPushButton(tr("Start"));
+    btPause = new QPushButton(tr("Pause"));
+    btStop = new QPushButton(tr("Stop"));
     btSetting = new QPushButton(tr("Setting"));
 
+    movieLabel = new QLabel();
+    movieLabel->setGeometry(115,60,128,128);
     timeLabel = new QLabel(WORKTIP + " 00 h 00 m 00 s");
-    status =    new QLabel(tr("Initial status : "));
+    status =    new QLabel(tr("Status : "));
+    workMode = new QCheckBox(tr("Work Cycle Mode "));
+    workMode->setChecked(true);
     message = new QLabel(tr("Please click Start button to continue ..."));
 
     qcStatus = new QComboBox();
-    qcStatus->addItem(tr("Working"));
+    qcStatus->addItem(tr("Seated Working"));
+    qcStatus->addItem(tr("Standing Working"));
     qcStatus->addItem(tr("Resting"));
 
 
     mainLayout->addWidget(icon, 0, 1, 1, 1,  Qt::AlignLeft);
     mainLayout->addWidget(pbar, 0, 2, 1, 6);
-    mainLayout->addWidget(btAbout, 0, 8, 1, 1, Qt::AlignLeft);
+    mainLayout->addWidget(btAbout, 0, 7, 1, 1, Qt::AlignLeft);
 
     mainLayout->addWidget(message, 1, 1, 1, 10);
     mainLayout->addWidget(status, 2, 1, 1, 2);
     mainLayout->addWidget(qcStatus, 2, 3, 1, 2);
-    mainLayout->addWidget(timeLabel, 3, 1, 1, 2);
+    mainLayout->addWidget(workMode, 3, 1, 1, 2);
+    mainLayout->addWidget(stat, 3, 3, 1, 2);
+    mainLayout->addWidget(timeLabel, 4, 1, 1, 2);
 
-    mainLayout->addWidget(btStart, 4, 2, 1, 2);
-    mainLayout->addWidget(btAcknowledge, 4, 4, 1, 2);
-    mainLayout->addWidget(btMin, 4, 6, 1,2);
-    mainLayout->addWidget(btSetting, 4, 8, 1,2);
-    mainLayout->addWidget(btQuit, 4, 10, 1,2);
+    mainLayout->addWidget(movieLabel, 1, 9, 5, 2, Qt::AlignRight);
+
+    mainLayout->addWidget(btStart, 5, 0, 1, 2);
+    mainLayout->addWidget(btPause, 5, 2, 1, 2);
+    mainLayout->addWidget(btStop, 5, 4, 1, 2);
+    mainLayout->addWidget(btAcknowledge, 5, 6, 1, 2);
+    mainLayout->addWidget(btMin, 5, 8, 1,2);
+    mainLayout->addWidget(btSetting, 5, 10, 1,2);
+    mainLayout->addWidget(btQuit, 5, 12, 1,2);
 
 
     mainLayout->setHorizontalSpacing(2);
@@ -98,10 +124,15 @@ void Main_windows::init_window()
     setLayout(mainLayout);
     mainLayout->setSizeConstraint(QLayout::SetMinimumSize);
 
+    movieLabel->setMovie(readyGif);
+    readyGif->start();
+
     // slots
     connect(btQuit, &QAbstractButton::clicked, this, &QApplication::quit);
     connect(btSetting, &QAbstractButton::clicked, this, &Main_windows::showSetting);
     connect(btStart, &QAbstractButton::clicked, this, &Main_windows::start);
+    connect(btPause, &QAbstractButton::clicked, this, &Main_windows::resume);
+    connect(btStop, &QAbstractButton::clicked, this, &Main_windows::stop);
     connect(btAcknowledge, &QAbstractButton::clicked, this, &Main_windows::acknowledge);
     connect(btMin, &QAbstractButton::clicked, this, &Main_windows::hide);
     connect(btAbout, &QAbstractButton::clicked, this, &Main_windows::about);
@@ -114,8 +145,6 @@ void Main_windows::init_window()
 
 void Main_windows::showSetting()
 {
-  if (!setting)
-      setting = new Setting();
    setting->show();
 }
 
@@ -125,14 +154,29 @@ void Main_windows::timeout()
     pbar->setValue(value);
 
     if (pbar->maximum()- value == 0) {
-        if (currentStauts()==ST_WORK) {
-            qcStatus->setCurrentText("Resting");
-        } else {
-            qcStatus->setCurrentText("Working");
+        btStop->setEnabled(true);
+        if (currentStauts()== ST_SEATWORK) {
+            workGif->stop();
+            qcStatus->setCurrentText("Standing Working");
+        } else if (currentStauts()== ST_STANDING) {
+            standWorkingGif->stop();
+            if (workMode->isChecked()) {
+                qcStatus->setCurrentText("Seated Working");
+            } else {
+                qcStatus->setCurrentText("Resting");
+            }
         }
+        else {
+            idleGif->stop();
+            qcStatus->setCurrentText("Seated Working");
+        }
+
+        movieLabel->setMovie(clickGif);
+        clickGif->start();
     }
 
-    if (currentStauts() == ST_WORK) {
+    if (currentStauts() == ST_SEATWORK) {
+        totalSeatedSecondTime += 1;
         timeLabel->setText( WORKTIP + formatTime(pbar->maximum()- value));
         //trayIcon->setToolTip(WORKTIP + formatTime(pbar->maximum()- value));
         if (pbar->maximum()- value == 0) {
@@ -140,12 +184,28 @@ void Main_windows::timeout()
              this->showNormal();
              this->activateWindow();
              btAcknowledge->setEnabled(true);
-             message->setText("It's time to begin to work! Please click acknowledge button to continue...");
+             message->setText("It's time to begin to seated work! Please click acknowledge button to continue...");
              QMessageBox::information(this, tr("Systray"),
-                                      tr("It's time to begin to work! Please click acknowledge button to continue..."));
+                                      tr("It's time to begin to do seated work! Please click acknowledge button to continue..."));
+
+        }
+     } else if (currentStauts() == ST_STANDING) {
+        totalStandSecondTime += 1;
+        timeLabel->setText( STANDINGTIP + formatTime(pbar->maximum()- value));
+        //trayIcon->setToolTip(WORKTIP + formatTime(pbar->maximum()- value));
+        if (pbar->maximum()- value == 0) {
+             timer->stop();
+             this->showNormal();
+             this->activateWindow();
+             btAcknowledge->setEnabled(true);
+             message->setText("It's time to begin to standing work! Please click acknowledge button to continue...");
+             QMessageBox::information(this, tr("Systray"),
+                                      tr("It's time to begin to do standing work! Please click acknowledge button to continue..."));
+
         }
      } else {
         timeLabel->setText( RESTTIP + formatTime(pbar->maximum()- value));
+         totalRestSecondTime += 1;
         //trayIcon->setToolTip(RESTTIP + formatTime(pbar->maximum()- value));
         if (pbar->maximum()- value == 0) {
              timer->stop();
@@ -154,9 +214,14 @@ void Main_windows::timeout()
              btAcknowledge->setEnabled(true);
              message->setText("It's time to standup and have a rest! Please click acknowledge button to continue...");
              QMessageBox::information(this, tr("Systray"),
-                                      tr("It's time to standup and have a rest! Please click acknowledge button to continue..."));
+                                      tr("It's time to have a rest! Please click acknowledge button to continue..."));
         }
      }
+
+    stat->setText(QString("Total Stat:\nSeated Minutes: %1m\nStanding Minutes: %2m\nRest Minutes: %3m").arg(formatTime(totalSeatedSecondTime),
+                                                                                                            formatTime(totalStandSecondTime), formatTime(totalRestSecondTime)));
+
+
 }
 
 QString Main_windows::formatTime(int val)
@@ -194,23 +259,69 @@ void Main_windows::createTrayIcon()
 
     trayIcon = new QSystemTrayIcon(this);
     trayIcon->setContextMenu(trayIconMenu);
-    QIcon icon("images/trash.png");
+    QIcon icon("images/alarm_app.ico");
     trayIcon->setIcon(icon);
     trayIcon->setVisible(true);
 }
 
 void Main_windows::about()
 {
-   QMessageBox::about(this, "Rest Nortify V 0.1", "Author : David Fan, Email : minhao.fan@gmail.com");
+   QMessageBox::about(this, "Rest Nortify V 0.1", "Author : David Fan\nEmail : minhao.fan@gmail.com\nHomepage: https://github.com/softengineer");
 }
 
 int Main_windows::currentStauts()
 {
     QString val = qcStatus->currentText();
-    if (val.toLower().startsWith("work")) {
-        return ST_WORK;
-    } else {
+    if (val.toLower().startsWith("seat")) {
+        return ST_SEATWORK;
+    } else if (val.toLower().startsWith("stand")) {
+        return ST_STANDING;
+    }  else {
         return ST_REST;
+    }
+}
+
+void Main_windows::setAnimation()
+{
+    clickGif->stop();
+    readyGif->stop();
+
+    if (currentStauts() == ST_SEATWORK) {
+         movieLabel->setMovie(workGif);
+         workGif->start();
+    } else if (currentStauts() == ST_STANDING) {
+        movieLabel->setMovie(standWorkingGif);
+        standWorkingGif->start();
+   } else {
+         movieLabel->setMovie(idleGif);
+         idleGif->start();
+    }
+}
+
+void Main_windows::reloadConfig() {
+    qDebug() << "reloading config ....";
+    if (currentStauts() == ST_SEATWORK) {
+        timer->start();
+        // working 45 minutes
+        pbar->setRange(0,  setting->getTime("seatedwork") * 60);
+        message->setText("You are in seated working status, please keep working ...");
+        message->setStyleSheet("QLabel {  color : red; }");
+        // only work we hide the windows
+        //hide();
+    } else  if (currentStauts() == ST_STANDING) {
+        timer->start();
+        // working 45 minutes
+        pbar->setRange(0, setting->getTime("standwork") * 60);
+        message->setText("You are in standing working status, please keep working ...");
+        message->setStyleSheet("QLabel {  color : red; }");
+        // only work we hide the windows
+        //hide();
+    } else {
+        timer->start();
+        // having rest 10 minutes
+        pbar->setRange(0, setting->getTime("rest") * 60);
+        message->setText("You are in rest status, please stand up and breathe some fresh air ...");
+        message->setStyleSheet("QLabel { color : green; }");
     }
 }
 
@@ -219,24 +330,77 @@ void Main_windows::start()
 {
     pbar->setValue(0);
 
-    if (currentStauts() == ST_WORK) {
-        timer->start();
-        // working 45 minutes
-        pbar->setRange(0, 20 * 60);
-        message->setText("You are in working status, please keep working ...");
-        message->setStyleSheet("QLabel {  color : red; }");
-    } else {
-        timer->start();
-        // having rest 10 minutes
-        pbar->setRange(0, 10 * 60);
-        message->setText("You are in rest status, please stand up and breathe some fresh air ...");
-        message->setStyleSheet("QLabel { color : green; }");
-    }
     qcStatus->setEnabled(false);
     btStart->setEnabled(false);
+    btStop->setEnabled(true);
     btAcknowledge->setEnabled(false);
-    hide();
+    setAnimation();
+    reloadConfig();
 }
+
+void Main_windows::stop()
+{
+    int value = pbar->value() + 1;
+
+    pbar->setValue(0);
+
+    qcStatus->setEnabled(true);
+    btStop->setEnabled(false);
+    btStart->setEnabled(true);
+    btAcknowledge->setEnabled(false);
+
+    pbar->setValue(value);
+
+        if (currentStauts()== ST_SEATWORK) {
+
+
+            workGif->stop();
+
+        } else if (currentStauts()== ST_STANDING) {
+
+            standWorkingGif->stop();
+
+        }
+        else {
+            idleGif->stop();
+
+        }
+
+        movieLabel->setMovie(clickGif);
+    }
+
+
+void Main_windows::resume()
+{
+    int value = pbar->value() + 1;
+
+    pbar->setValue(0);
+
+    qcStatus->setEnabled(true);
+    btStop->setEnabled(false);
+    btStart->setEnabled(true);
+    btAcknowledge->setEnabled(false);
+
+    pbar->setValue(value);
+
+        if (currentStauts()== ST_SEATWORK) {
+
+
+            workGif->stop();
+
+        } else if (currentStauts()== ST_STANDING) {
+
+            standWorkingGif->stop();
+
+        }
+        else {
+            idleGif->stop();
+
+        }
+
+        movieLabel->setMovie(clickGif);
+    }
+
 
 
 void Main_windows::acknowledge()

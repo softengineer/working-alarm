@@ -66,35 +66,45 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QMessageBox>
+#include <QJsonDocument>
+#include <QFile>
+#include <QJsonObject>
+#include <QJsonArray>
 
 //! [0]
 Setting::Setting()
 {
-    createIconGroupBox();
-    createMessageGroupBox();
 
-    iconLabel->setMinimumWidth(durationLabel->sizeHint().width());
+    this->loadJsonSetting();
+//    createIconGroupBox();
+//    createMessageGroupBox();
+    createTimeSettingGroupBox();
+
+//    iconLabel->setMinimumWidth(durationLabel->sizeHint().width());
 
     createActions();
-    createTrayIcon();
+//    createTrayIcon();
 
-    connect(showMessageButton, &QAbstractButton::clicked, this, &Setting::showMessage);
-    connect(showIconCheckBox, &QAbstractButton::toggled, trayIcon, &QSystemTrayIcon::setVisible);
-    connect(iconComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &Setting::setIcon);
-    connect(trayIcon, &QSystemTrayIcon::messageClicked, this, &Setting::messageClicked);
-    connect(trayIcon, &QSystemTrayIcon::activated, this, &Setting::iconActivated);
+//    connect(showMessageButton, &QAbstractButton::clicked, this, &Setting::showMessage);
+//    connect(showIconCheckBox, &QAbstractButton::toggled, trayIcon, &QSystemTrayIcon::setVisible);
+//    connect(iconComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+//            this, &Setting::setIcon);
+//    connect(trayIcon, &QSystemTrayIcon::messageClicked, this, &Setting::messageClicked);
+//    connect(trayIcon, &QSystemTrayIcon::activated, this, &Setting::iconActivated);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
-    mainLayout->addWidget(iconGroupBox);
-    mainLayout->addWidget(messageGroupBox);
+    //mainLayout->addWidget(iconGroupBox);
+    //mainLayout->addWidget(messageGroupBox);
+    mainLayout->addWidget(timeSettingGroupBox);
+
+
     setLayout(mainLayout);
 
-    iconComboBox->setCurrentIndex(1);
-    trayIcon->show();
+//    iconComboBox->setCurrentIndex(1);
+//    trayIcon->show();
 
-    setWindowTitle(tr("Systray"));
-    resize(400, 300);
+    setWindowTitle(tr("Setting"));
+    resize(400, 150);
 }
 //! [0]
 
@@ -111,20 +121,15 @@ void Setting::setVisible(bool visible)
 //! [2]
 void Setting::closeEvent(QCloseEvent *event)
 {
-#ifdef Q_OS_OSX
-    if (!event->spontaneous() || !isVisible()) {
-        return;
-    }
-#endif
-    if (trayIcon->isVisible()) {
-        QMessageBox::information(this, tr("Systray"),
-                                 tr("The program will keep running in the "
-                                    "system tray. To terminate the program, "
-                                    "choose <b>Quit</b> in the context menu "
-                                    "of the system tray entry."));
+
+
+        this->setTime("rest", restTimeSpinBox->value());
+        this->setTime("seatedwork", seatedWorkTimeSpinBox->value());
+        this->setTime("standwork", standWorkTimeSpinBox->value());
+        saveJsonSetting();
         hide();
         event->ignore();
-    }
+
 }
 //! [2]
 
@@ -205,6 +210,114 @@ void Setting::createIconGroupBox()
     iconGroupBox->setLayout(iconLayout);
 }
 
+ConfigItem & ConfigItem::operator = ( ConfigItem & item) {
+    this->key = item.key;
+    this->value = item.value;
+    this->category = item.category;
+
+    return *this;
+}
+
+void Setting::loadJsonSetting() {
+
+        QFile inFile(CONFIG_PATH);
+        inFile.open(QIODevice::ReadOnly|QIODevice::Text);
+        QByteArray data = inFile.readAll();
+        inFile.close();
+
+        QJsonParseError errorPtr;
+        QJsonDocument doc = QJsonDocument::fromJson(data, &errorPtr);
+        if (doc.isNull()) {
+            qDebug() << "Parse failed";
+        }
+        QJsonArray array = doc.array();
+
+        int length = array.size();
+        ConfigItem * all = new ConfigItem[length];
+        for (int i = 0; i< length; i++)
+        {
+            const QJsonValue &v =  array[i];
+
+            QJsonObject obj = v.toObject();
+            ConfigItem item;
+
+            item.key  =  obj.value("key").toString();
+            item.value = obj.value("value").toInt();
+            item.category =  obj.value("category").toString();
+            all[i] = item;
+        }
+
+        this->ConfigItems =  all;
+}
+
+bool Setting::saveJsonSetting() {
+
+    QFile file(CONFIG_PATH);
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+    QJsonParseError JsonParseError;
+    QJsonDocument JsonDocument = QJsonDocument::fromJson(file.readAll(), &JsonParseError);
+    file.close();
+    QJsonObject rootObject = JsonDocument.object();
+    QJsonArray array;
+    QJsonObject qrest;
+    qrest.insert("key", "rest");
+    qrest.insert("value", getTime("rest"));
+    qrest.insert("category", "rest");
+    array.push_back(qrest);
+
+    QJsonObject qseat;
+    qseat.insert("key", "seatedwork");
+    qseat.insert("value", getTime("seatedwork"));
+    qseat.insert("category", "work");
+    array.push_back(qseat);
+
+
+    QJsonObject qstand;
+    qstand.insert("key", "standwork");
+    qstand.insert("value", getTime("standwork"));
+    qstand.insert("category", "work");
+    array.push_back(qstand);
+
+
+    JsonDocument.setArray(array);
+    file.open(QFile::WriteOnly | QFile::Text | QFile::Truncate);
+    file.write(JsonDocument.toJson());
+    file.close();
+
+    return true;
+}
+
+int Setting::getTime( QString name) {
+    int length = 3;//sizeof( this->ConfigItems ) / sizeof( ConfigItem );
+
+    for (int j = 0; j< length; j++) {
+
+
+        if (this->ConfigItems [ j].key == name) {
+            return this->ConfigItems [ j].value;
+        }
+    }
+
+    return -1;
+}
+
+void Setting::setTime( QString name, int value) {
+    int length = sizeof( ConfigItem ) / sizeof( ConfigItem );
+
+    for (int j = 0; j< length; j++) {
+        ConfigItem * p = this->ConfigItems + j;
+        if (p->key == name) {
+             p->value = value;
+        }
+    }
+
+    return;
+}
+
+
+
+
+
 void Setting::createMessageGroupBox()
 {
     messageGroupBox = new QGroupBox(tr("Balloon Message"));
@@ -264,6 +377,49 @@ void Setting::createMessageGroupBox()
     messageLayout->setColumnStretch(3, 1);
     messageLayout->setRowStretch(4, 1);
     messageGroupBox->setLayout(messageLayout);
+}
+
+void Setting::createTimeSettingGroupBox() {
+
+    timeSettingGroupBox = new QGroupBox(tr("Time Setting"));
+
+    restTimeLabel = new QLabel(tr("Rest time duration:"));
+
+    restTimeSpinBox = new QSpinBox;
+    restTimeSpinBox->setRange(5, 60);
+    restTimeSpinBox->setSuffix(" m");
+    restTimeSpinBox->setValue(this->getTime("rest"));
+
+    seatedWorkTimeLabel = new QLabel(tr("Work time duration:"));
+
+    seatedWorkTimeSpinBox = new QSpinBox;
+    seatedWorkTimeSpinBox->setRange(5, 60);
+    seatedWorkTimeSpinBox->setSuffix(" m");
+
+    seatedWorkTimeSpinBox->setValue(this->getTime("seatedwork"));
+
+    standWorkTimeLabel = new QLabel(tr("Stand time duration:"));
+
+    standWorkTimeSpinBox = new QSpinBox;
+    standWorkTimeSpinBox->setRange(5, 60);
+    standWorkTimeSpinBox->setSuffix(" m");
+    standWorkTimeSpinBox->setValue(1);
+
+    QGridLayout *messageLayout = new QGridLayout;
+
+    messageLayout->addWidget(restTimeLabel, 1, 0);
+    messageLayout->addWidget(restTimeSpinBox, 1, 1);
+
+    messageLayout->addWidget(seatedWorkTimeLabel, 2, 0);
+    messageLayout->addWidget(seatedWorkTimeSpinBox, 2, 1);
+
+    messageLayout->addWidget(standWorkTimeLabel, 3, 0);
+    messageLayout->addWidget(standWorkTimeSpinBox, 3, 1);
+
+
+    messageLayout->setColumnStretch(4, 1);
+    messageLayout->setRowStretch(5, 1);
+    timeSettingGroupBox->setLayout(messageLayout);
 }
 
 void Setting::createActions()

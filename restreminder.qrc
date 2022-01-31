@@ -4,5 +4,11 @@
         <file>images/heart.png</file>
         <file>images/trash.png</file>
         <file>images/alarm.png</file>
+        <file>images/working.gif</file>
+        <file>images/giphy.gif</file>
+        <file>images/ready.gif</file>
+        <file>images/click.gif</file>
+        <file>images/alarm_app.ico</file>
+        <file>images/standing_working.gif</file>
     </qresource>
 </RCC>

@@ -1,0 +1,17 @@
+[
+    {
+        "category": "rest",
+        "key": "rest",
+        "value": 10
+    },
+    {
+        "category": "work",
+        "key": "seatedwork",
+        "value": 25
+    },
+    {
+        "category": "work",
+        "key": "standwork",
+        "value": 15
+    }
+]

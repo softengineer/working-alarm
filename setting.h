@@ -56,6 +56,7 @@
 #ifndef QT_NO_SYSTEMTRAYICON
 
 #include <QDialog>
+#include <timesetting.h>
 
 QT_BEGIN_NAMESPACE
 class QAction;
@@ -72,6 +73,25 @@ class QProgressBar;
 QT_END_NAMESPACE
 
 //! [0]
+//!
+//!
+//!
+
+
+const QString CONFIG_PATH = "/home/davidfan/Work/work-rest-reminder/setting.json";
+
+class ConfigItem : public QObject{
+    Q_OBJECT
+public:
+    QString key;
+    int value;
+    QString category;
+
+    ConfigItem & operator = ( ConfigItem &);
+};
+
+
+
 class Setting : public QDialog
 {
     Q_OBJECT
@@ -79,7 +99,11 @@ class Setting : public QDialog
 public:
     Setting();
 
+    void  loadJsonSetting();
+    bool saveJsonSetting();
     void setVisible(bool visible) override;
+    int  getTime(QString);
+
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -89,13 +113,20 @@ private slots:
     void iconActivated(QSystemTrayIcon::ActivationReason reason);
     void showMessage();
     void messageClicked();
+    void setTime(QString, int);
+
+signals:
+    void updateChange();
 
 private:
     void createIconGroupBox();
     void createMessageGroupBox();
+    void createTimeSettingGroupBox();
     void createActions();
     void createTrayIcon();
 
+
+    ConfigItem * ConfigItems;
     QGroupBox *iconGroupBox;
     QLabel *iconLabel;
     QComboBox *iconComboBox;
@@ -103,16 +134,31 @@ private:
 
     QGroupBox *messageGroupBox;
     QLabel *typeLabel;
-    QLabel *durationLabel;
-    QLabel *durationWarningLabel;
+       QLabel *durationWarningLabel;
     QLabel *titleLabel;
     QLabel *bodyLabel;
     QComboBox *typeComboBox;
+    QLabel *durationLabel;
     QSpinBox *durationSpinBox;
     QLineEdit *titleEdit;
     QTextEdit *bodyEdit;
     QPushButton *showMessageButton;
     QProgressBar * progress;
+
+    QGroupBox *timeSettingGroupBox;
+    QLabel *restTimeLabel;
+    QSpinBox *restTimeSpinBox;
+    QCheckBox * ckRest;
+
+    QLabel *seatedWorkTimeLabel;
+    QSpinBox *seatedWorkTimeSpinBox;
+    QCheckBox * ckSeatedWork;
+
+
+    QLabel *standWorkTimeLabel;
+    QSpinBox *standWorkTimeSpinBox;
+    QCheckBox * ckStandWork;
+
 
     QAction *minimizeAction;
     QAction *maximizeAction;
