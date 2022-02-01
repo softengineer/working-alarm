@@ -219,7 +219,7 @@ ConfigItem & ConfigItem::operator = ( ConfigItem & item) {
 }
 
 void Setting::loadJsonSetting() {
-
+        qDebug() << CONFIG_PATH;
         QFile inFile(CONFIG_PATH);
         inFile.open(QIODevice::ReadOnly|QIODevice::Text);
         QByteArray data = inFile.readAll();

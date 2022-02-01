@@ -51,7 +51,7 @@ void Main_windows::init_window()
     clickGif = new QMovie(":images/click.gif");
     standWorkingGif =  new QMovie(":images/standing_working.gif");
 
-    stat = new QLabel( QString("Total Stats:\nSeated Minutes: %1m\nStanding Minutes: %1m\nRest Minutes: %1m").
+    stat = new QLabel( QString("Statistic:\nSeated Minutes: %1m\nStanding Minutes: %1m\nRest Minutes: %1m").
                        arg(formatTime(totalSeatedSecondTime)).arg(formatTime(totalStandSecondTime)).arg(formatTime(totalRestSecondTime)) );
 
     // control work sleep
@@ -232,17 +232,17 @@ void Main_windows::timeout()
      }
 
     if (currentStauts() == ST_SEATWORK) {
-        QString text = "Total Stats:<br><b>Seated Minutes: " +formatTime(totalSeatedSecondTime) + "</b><br>Standing Minutes: "
+        QString text = "Statistic:<br><b>Seated Minutes: " +formatTime(totalSeatedSecondTime) + "</b><br>Standing Minutes: "
                 + formatTime(totalStandSecondTime)+"<br>Rest Minutes: "+ formatTime(totalRestSecondTime);
         stat->setText(text);
 
     } else if (currentStauts() == ST_STANDING) {
-        QString text = "Total Stats:<br>Seated Minutes: " +formatTime(totalSeatedSecondTime) + "<br><b>Standing Minutes: "
+        QString text = "Statistic:<br>Seated Minutes: " +formatTime(totalSeatedSecondTime) + "<br><b>Standing Minutes: "
                 + formatTime(totalStandSecondTime)+"</b><br>Rest Minutes: "+ formatTime(totalRestSecondTime);
         stat->setText(text);
 
     } else {
-        QString text = "Total Stats:<br>Seated Minutes: " +formatTime(totalSeatedSecondTime) + "<br>Standing Minutes: "
+        QString text = "Statistic:<br>Seated Minutes: " +formatTime(totalSeatedSecondTime) + "<br>Standing Minutes: "
                 + formatTime(totalStandSecondTime)+"<br><b>Rest Minutes: "+ formatTime(totalRestSecondTime) + "</b>";
         stat->setText(text);
      }

@@ -56,6 +56,7 @@
 #ifndef QT_NO_SYSTEMTRAYICON
 
 #include <QDialog>
+#include <QDir>
 #include <timesetting.h>
 
 QT_BEGIN_NAMESPACE
@@ -78,7 +79,7 @@ QT_END_NAMESPACE
 //!
 
 
-const QString CONFIG_PATH = "/home/davidfan/Work/work-rest-reminder/setting.json";
+const QString CONFIG_PATH = QDir::currentPath()  + "/setting.json";
 
 class ConfigItem : public QObject{
     Q_OBJECT
