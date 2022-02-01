@@ -53,6 +53,10 @@ private:
     QAtomicInt totalSeatedSecondTime = 0;
     QAtomicInt totalStandSecondTime = 0;
     QAtomicInt totalRestSecondTime = 0;
+    //0 stop
+    //1 running
+    //2 pause
+    QAtomicInt runningStatus = 0;
     void init_window();
     void createTrayIcon();
     void createActions();

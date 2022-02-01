@@ -51,7 +51,7 @@ void Main_windows::init_window()
     clickGif = new QMovie(":images/click.gif");
     standWorkingGif =  new QMovie(":images/standing_working.gif");
 
-    stat = new QLabel( QString("Total Stat:\nSeated Minutes: %1m\nStanding Minutes: %1m\nRest Minutes: %1m").
+    stat = new QLabel( QString("Total Stats:\nSeated Minutes: %1m\nStanding Minutes: %1m\nRest Minutes: %1m").
                        arg(formatTime(totalSeatedSecondTime)).arg(formatTime(totalStandSecondTime)).arg(formatTime(totalRestSecondTime)) );
 
     // control work sleep
@@ -150,8 +150,21 @@ void Main_windows::showSetting()
 
 void Main_windows::timeout()
 {
+    if (runningStatus == 2) {
+        return;
+    }
+
     int value = pbar->value() + 1;
     pbar->setValue(value);
+
+    if (currentStauts() == ST_SEATWORK) {
+        totalSeatedSecondTime += 1;
+    } else if (currentStauts() == ST_STANDING) {
+        totalStandSecondTime += 1;
+    } else {
+        totalRestSecondTime += 1;
+     }
+
 
     if (pbar->maximum()- value == 0) {
         btStop->setEnabled(true);
@@ -176,9 +189,9 @@ void Main_windows::timeout()
     }
 
     if (currentStauts() == ST_SEATWORK) {
-        totalSeatedSecondTime += 1;
+
         timeLabel->setText( WORKTIP + formatTime(pbar->maximum()- value));
-        //trayIcon->setToolTip(WORKTIP + formatTime(pbar->maximum()- value));
+
         if (pbar->maximum()- value == 0) {
              timer->stop();
              this->showNormal();
@@ -190,9 +203,9 @@ void Main_windows::timeout()
 
         }
      } else if (currentStauts() == ST_STANDING) {
-        totalStandSecondTime += 1;
+
         timeLabel->setText( STANDINGTIP + formatTime(pbar->maximum()- value));
-        //trayIcon->setToolTip(WORKTIP + formatTime(pbar->maximum()- value));
+
         if (pbar->maximum()- value == 0) {
              timer->stop();
              this->showNormal();
@@ -205,8 +218,8 @@ void Main_windows::timeout()
         }
      } else {
         timeLabel->setText( RESTTIP + formatTime(pbar->maximum()- value));
-         totalRestSecondTime += 1;
-        //trayIcon->setToolTip(RESTTIP + formatTime(pbar->maximum()- value));
+
+
         if (pbar->maximum()- value == 0) {
              timer->stop();
              this->showNormal();
@@ -218,8 +231,23 @@ void Main_windows::timeout()
         }
      }
 
-    stat->setText(QString("Total Stat:\nSeated Minutes: %1m\nStanding Minutes: %2m\nRest Minutes: %3m").arg(formatTime(totalSeatedSecondTime),
-                                                                                                            formatTime(totalStandSecondTime), formatTime(totalRestSecondTime)));
+    if (currentStauts() == ST_SEATWORK) {
+        QString text = "Total Stats:<br><b>Seated Minutes: " +formatTime(totalSeatedSecondTime) + "</b><br>Standing Minutes: "
+                + formatTime(totalStandSecondTime)+"<br>Rest Minutes: "+ formatTime(totalRestSecondTime);
+        stat->setText(text);
+
+    } else if (currentStauts() == ST_STANDING) {
+        QString text = "Total Stats:<br>Seated Minutes: " +formatTime(totalSeatedSecondTime) + "<br><b>Standing Minutes: "
+                + formatTime(totalStandSecondTime)+"</b><br>Rest Minutes: "+ formatTime(totalRestSecondTime);
+        stat->setText(text);
+
+    } else {
+        QString text = "Total Stats:<br>Seated Minutes: " +formatTime(totalSeatedSecondTime) + "<br>Standing Minutes: "
+                + formatTime(totalStandSecondTime)+"<br><b>Rest Minutes: "+ formatTime(totalRestSecondTime) + "</b>";
+        stat->setText(text);
+     }
+
+
 
 
 }
@@ -328,6 +356,7 @@ void Main_windows::reloadConfig() {
 
 void Main_windows::start()
 {
+    runningStatus = 1;
     pbar->setValue(0);
 
     qcStatus->setEnabled(false);
@@ -340,6 +369,8 @@ void Main_windows::start()
 
 void Main_windows::stop()
 {
+    runningStatus = 0;
+    timer->stop();
     int value = pbar->value() + 1;
 
     pbar->setValue(0);
@@ -372,34 +403,16 @@ void Main_windows::stop()
 
 void Main_windows::resume()
 {
-    int value = pbar->value() + 1;
-
-    pbar->setValue(0);
-
-    qcStatus->setEnabled(true);
-    btStop->setEnabled(false);
-    btStart->setEnabled(true);
-    btAcknowledge->setEnabled(false);
-
-    pbar->setValue(value);
-
-        if (currentStauts()== ST_SEATWORK) {
-
-
-            workGif->stop();
-
-        } else if (currentStauts()== ST_STANDING) {
-
-            standWorkingGif->stop();
-
-        }
-        else {
-            idleGif->stop();
-
-        }
-
-        movieLabel->setMovie(clickGif);
+    if (runningStatus == 2) {
+          runningStatus = 1;
+          btPause->setText("Pause");
+          setWindowTitle(tr("Working/Rest Alarm"));
+    } else if  (runningStatus == 1)  {
+         runningStatus = 2;
+         btPause->setText("Resume");
+         setWindowTitle(tr("Working/Rest Alarm(Pause ....)"));
     }
+}
 
 
 
