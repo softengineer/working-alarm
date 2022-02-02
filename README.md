@@ -1,5 +1,7 @@
-### work-rest-reminder
-Give timeout alarm for standup / seated / rest style work (useful for long seated style of work, which has been proved not healthy)
+### working alarm
+Give timeout alarm for standup / seated / rest style of working (useful for long seated working, which has been proved not healthy)
+
+Offer different setting and animation to ease your life!
 
 Support Mac / Linux / Windows platform, qt5 or 6 is required to be installed before compile
 
