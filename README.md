@@ -1,6 +1,8 @@
 ### working alarm
 Give timeout alarm for standup / seated / rest style of working (useful for long seated working, which has been proved not healthy)
 
+![ScreenShot](https://github.com/softengineer/working-alarm/blob/master/images/screenshot.png)
+
 Offer different setting and animation to ease your life!
 
 Support Mac / Linux / Windows platform, qt5 or 6 is required to be installed before compile
