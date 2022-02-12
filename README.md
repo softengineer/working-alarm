@@ -11,7 +11,9 @@ Have tested platform:
 
    Linux Ubuntu
 
-### Install:
+### Compile:
+
+Qt6(mandatory), QMake or CMake or QtCreator need to be installed in advance
 
 qmake -makefile
 
