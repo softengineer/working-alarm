@@ -15,9 +15,14 @@ Have tested platform:
 
 qmake -makefile
 
+Or use cmake to generate make file
+
+#point to the qt installed directory in system!
+cmake . -DCMAKE_PREFIX_PATH=~/Qt/6.2.1/gcc_64 
+
 make
 
-make install
+./restreminder
 
 or install qtcreator to compile 
 
