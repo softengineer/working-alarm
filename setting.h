@@ -57,6 +57,7 @@
 
 #include <QDialog>
 #include <QDir>
+#include <QVector>
 #include <timesetting.h>
 
 QT_BEGIN_NAMESPACE
@@ -84,11 +85,14 @@ const QString CONFIG_PATH = QDir::currentPath()  + "/setting.json";
 class ConfigItem : public QObject{
     Q_OBJECT
 public:
+    ConfigItem(const ConfigItem&);
+    ConfigItem(ConfigItem &);
+    ConfigItem();
     QString key;
     int value;
     QString category;
 
-    ConfigItem & operator = ( ConfigItem &);
+    ConfigItem & operator = ( const ConfigItem &);
 };
 
 
@@ -127,7 +131,7 @@ private:
     void createTrayIcon();
 
 
-    ConfigItem * ConfigItems;
+    QVector <ConfigItem> configItems;
     QGroupBox *iconGroupBox;
     QLabel *iconLabel;
     QComboBox *iconComboBox;

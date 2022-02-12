@@ -126,6 +126,7 @@ void Setting::closeEvent(QCloseEvent *event)
         this->setTime("rest", restTimeSpinBox->value());
         this->setTime("seatedwork", seatedWorkTimeSpinBox->value());
         this->setTime("standwork", standWorkTimeSpinBox->value());
+        qDebug() << "save setting :" << getTime("standwork") << "|" << standWorkTimeSpinBox->value() ;
         saveJsonSetting();
         hide();
         event->ignore();
@@ -210,12 +211,33 @@ void Setting::createIconGroupBox()
     iconGroupBox->setLayout(iconLayout);
 }
 
-ConfigItem & ConfigItem::operator = ( ConfigItem & item) {
+ConfigItem & ConfigItem::operator = ( const ConfigItem & item) {
     this->key = item.key;
     this->value = item.value;
     this->category = item.category;
 
     return *this;
+}
+
+
+
+ConfigItem::ConfigItem ( const ConfigItem & item) {
+    this->key = item.key;
+    this->value = item.value;
+    this->category = item.category;
+
+}
+
+ConfigItem::ConfigItem (  ConfigItem & item) {
+    this->key = item.key;
+    this->value = item.value;
+    this->category = item.category;
+
+}
+
+ConfigItem::ConfigItem ( ) {
+
+
 }
 
 void Setting::loadJsonSetting() {
@@ -244,10 +266,10 @@ void Setting::loadJsonSetting() {
             item.key  =  obj.value("key").toString();
             item.value = obj.value("value").toInt();
             item.category =  obj.value("category").toString();
-            all[i] = item;
+            this->configItems.push_back(item);
         }
 
-        this->ConfigItems =  all;
+       
 }
 
 bool Setting::saveJsonSetting() {
@@ -260,6 +282,7 @@ bool Setting::saveJsonSetting() {
     QJsonObject rootObject = JsonDocument.object();
     QJsonArray array;
     QJsonObject qrest;
+    
     qrest.insert("key", "rest");
     qrest.insert("value", getTime("rest"));
     qrest.insert("category", "rest");
@@ -288,13 +311,13 @@ bool Setting::saveJsonSetting() {
 }
 
 int Setting::getTime( QString name) {
-    int length = 3;//sizeof( this->ConfigItems ) / sizeof( ConfigItem );
+    int length = this->configItems.size();//sizeof( this->ConfigItems ) / sizeof( ConfigItem );
 
     for (int j = 0; j< length; j++) {
 
 
-        if (this->ConfigItems [ j].key == name) {
-            return this->ConfigItems [ j].value;
+        if (this->configItems [ j].key == name) {
+            return this->configItems [ j].value;
         }
     }
 
@@ -302,12 +325,13 @@ int Setting::getTime( QString name) {
 }
 
 void Setting::setTime( QString name, int value) {
-    int length = sizeof( ConfigItem ) / sizeof( ConfigItem );
+    int length = this->configItems.size();
 
     for (int j = 0; j< length; j++) {
-        ConfigItem * p = this->ConfigItems + j;
-        if (p->key == name) {
-             p->value = value;
+        ConfigItem & p = this->configItems[ j];
+        if (p.key == name) {
+         
+             p.value = value;
         }
     }
 
@@ -403,7 +427,7 @@ void Setting::createTimeSettingGroupBox() {
     standWorkTimeSpinBox = new QSpinBox;
     standWorkTimeSpinBox->setRange(5, 60);
     standWorkTimeSpinBox->setSuffix(" m");
-    standWorkTimeSpinBox->setValue(1);
+    standWorkTimeSpinBox->setValue(this->getTime("standwork"));
 
     QGridLayout *messageLayout = new QGridLayout;
 
