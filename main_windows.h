@@ -47,12 +47,14 @@ private slots:
     void acknowledge();
     void showSetting();
     void timeout();
+    void acknowledgeTimeout();
 
 
 private:
     QAtomicInt totalSeatedSecondTime = 0;
     QAtomicInt totalStandSecondTime = 0;
     QAtomicInt totalRestSecondTime = 0;
+    QAtomicInt totalAcknowledgeTime = 100;
     //0 stop
     //1 running
     //2 pause
@@ -91,8 +93,10 @@ private:
     int seatedMinutes = 0;
     int standMinutes = 0;
     int restMinutes = 0;
+    int acknowledgeTime = 0;
 
     QCheckBox * workMode;
+    QCheckBox * autoAcknowledge;
 
     QAction *minimizeAction;
     QAction *maximizeAction;
@@ -100,6 +104,7 @@ private:
     QAction *quitAction;
 
     QTimer * timer;
+    QTimer * acknowledgeTimer;
     Setting * setting;
 
     QMovie * workGif;

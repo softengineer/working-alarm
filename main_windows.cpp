@@ -59,6 +59,10 @@ void Main_windows::init_window()
     // set time trigger every 1s
     timer->setInterval(1000);
 
+    acknowledgeTimer = new QTimer(this);
+    // set time trigger every 1s
+    acknowledgeTimer->setInterval(1000);
+
     mainLayout = new QGridLayout;
     icon = new QLabel(tr("aa"));
     pbar = new QProgressBar(this);
@@ -88,6 +92,9 @@ void Main_windows::init_window()
     status =    new QLabel(tr("Status : "));
     workMode = new QCheckBox(tr("Work Cycle Mode "));
     workMode->setChecked(true);
+
+    autoAcknowledge =  new QCheckBox(tr("Auto Acknowledge"));
+    autoAcknowledge->setChecked(false);
     message = new QLabel(tr("Please click Start button to continue ..."));
 
     qcStatus = new QComboBox();
@@ -105,7 +112,8 @@ void Main_windows::init_window()
     mainLayout->addWidget(qcStatus, 2, 3, 1, 2);
     mainLayout->addWidget(workMode, 3, 1, 1, 2);
     mainLayout->addWidget(stat, 3, 3, 1, 2);
-    mainLayout->addWidget(timeLabel, 4, 1, 1, 2);
+    mainLayout->addWidget(autoAcknowledge, 4, 1, 1, 2);
+    mainLayout->addWidget(timeLabel, 4, 3, 1, 2);
 
     mainLayout->addWidget(movieLabel, 1, 9, 5, 2, Qt::AlignRight);
 
@@ -139,13 +147,24 @@ void Main_windows::init_window()
     // timer events
     connect(timer, SIGNAL(timeout()), this, SLOT(timeout()));
 
-
+    // timer events
+    connect(acknowledgeTimer, SIGNAL(timeout()), this, SLOT(acknowledgeTimeout()));
     resize(400, 300);
 }
 
 void Main_windows::showSetting()
 {
    setting->show();
+}
+
+void Main_windows::acknowledgeTimeout() {
+    acknowledgeTime--;
+    if (acknowledgeTime == 0) {
+
+        btAcknowledge->click();
+    }
+    btAcknowledge->setText(tr("Acknowledge") + tr("(")  + QString::number(acknowledgeTime) + tr(")"));
+
 }
 
 void Main_windows::timeout()
@@ -197,6 +216,14 @@ void Main_windows::timeout()
              this->showNormal();
              this->activateWindow();
              btAcknowledge->setEnabled(true);
+              btAcknowledge->setStyleSheet("background-color:red;");
+              if (this->autoAcknowledge->isChecked()) {
+                  acknowledgeTime = totalAcknowledgeTime;
+                     btAcknowledge->setText(tr("Acknowledge") + tr("(")  + QString::number(acknowledgeTime) + tr(")"));
+
+                     acknowledgeTimer->start();
+
+              }
              message->setText("It's time to begin to seated work! Please click acknowledge button to continue...");
              QMessageBox::information(this, tr("Systray"),
                                       tr("It's time to begin to do seated work! Please click acknowledge button to continue..."));
@@ -211,6 +238,14 @@ void Main_windows::timeout()
              this->showNormal();
              this->activateWindow();
              btAcknowledge->setEnabled(true);
+             btAcknowledge->setStyleSheet("background-color:red;");
+             if (this->autoAcknowledge->isChecked()) {
+                    acknowledgeTime = totalAcknowledgeTime;
+                    btAcknowledge->setText(tr("Acknowledge") + tr("(")  + QString::number(acknowledgeTime) + tr(")"));
+
+                    acknowledgeTimer->start();
+
+             }
              message->setText("It's time to begin to standing work! Please click acknowledge button to continue...");
              QMessageBox::information(this, tr("Systray"),
                                       tr("It's time to begin to do standing work! Please click acknowledge button to continue..."));
@@ -225,6 +260,14 @@ void Main_windows::timeout()
              this->showNormal();
              this->activateWindow();
              btAcknowledge->setEnabled(true);
+             btAcknowledge->setStyleSheet("background-color:red;");
+             if (this->autoAcknowledge->isChecked()) {
+                    acknowledgeTime = totalAcknowledgeTime;
+                    btAcknowledge->setText(tr("Acknowledge") + tr("(")  + QString::number(acknowledgeTime) + tr(")"));
+
+                    acknowledgeTimer->start();
+
+             }
              message->setText("It's time to standup and have a rest! Please click acknowledge button to continue...");
              QMessageBox::information(this, tr("Systray"),
                                       tr("It's time to have a rest! Please click acknowledge button to continue..."));
@@ -327,7 +370,6 @@ void Main_windows::setAnimation()
 }
 
 void Main_windows::reloadConfig() {
-    qDebug() << "reloading config ....";
     if (currentStauts() == ST_SEATWORK) {
         timer->start();
         // working 45 minutes
@@ -363,6 +405,7 @@ void Main_windows::start()
     btStart->setEnabled(false);
     btStop->setEnabled(true);
     btAcknowledge->setEnabled(false);
+    btAcknowledge->setStyleSheet("");
     setAnimation();
     reloadConfig();
 }
@@ -418,5 +461,6 @@ void Main_windows::resume()
 
 void Main_windows::acknowledge()
 {
+    acknowledgeTimer->stop();
     start();
 }
